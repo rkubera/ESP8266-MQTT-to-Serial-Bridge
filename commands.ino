@@ -7,6 +7,16 @@
 #include <String.h>
 
 void sendCommand (String myCommand) {
+  CRC32_reset();
+  CRC32_update('[');
+  for (size_t i = 0; i < myCommand.length(); i++) {
+    CRC32_update(myCommand[i]);
+  }
+  CRC32_update(']');
+  uint32_t checksum = CRC32_finalize();
+  
+  Serial.print(checksum);
+  Serial.print(" ");
   Serial.print("[");
   Serial.print(myCommand);
   Serial.println("]");
@@ -25,6 +35,9 @@ void getCommand(String payload) {
     String command = "timestamp ";
     if (cbtime_set==true) {
         mytimestamp = time(nullptr);
+        if (mytimestamp<1000000) {
+          mytimestamp = 0;
+        }
     }
     command = command+(String) mytimestamp;
     sendCommand(command);
@@ -43,10 +56,18 @@ void getCommand(String payload) {
   }
   else if (payload=="wifistatus") {
     if (wificonnected==true) {
-      sendCommand("connected");
+      sendCommand("wifi connected");
     }
     else {
-      sendCommand("disconnected");
+      sendCommand("wifi not connected");
+    }
+  }
+  else if (payload=="mqttstatus") {
+    if (client.connected()) {
+      sendCommand("mqtt connected");
+    }
+    else {
+      sendCommand("mqtt not connected");
     }
   }
   else if (payload=="ssid") {
@@ -66,7 +87,7 @@ void getCommand(String payload) {
 
 void publishCommand (String payload) {
   if (!client.connected()) {
-    sendCommand("mqtt server not connected");
+    sendCommand("mqtt not connected");
     return;
   }
   int tmpIdx;
@@ -82,7 +103,7 @@ void publishCommand (String payload) {
 
 void publishretainedCommand (String payload) {
   if (!client.connected()) {
-    sendCommand("mqtt server not connected");
+    sendCommand("mqtt not connected");
     return;
   }
   int tmpIdx;
@@ -148,7 +169,7 @@ void mqttServerCommand(String payload) {
 
 void subscribeCommand (String subscription) {
   if (!client.connected()) {
-    sendCommand("mqtt server not connected");
+    sendCommand("mqtt not connected");
     return;
   }
   int start = 0;
@@ -178,20 +199,19 @@ void subscribeCommand (String subscription) {
     sendCommand("subscription added");
   }
   else {
-    sendCommand("subscription already exists");
+    sendCommand("subscription exists");
   }
 }
 
 void unsubscribeCommand (String subscription) {
   if (!client.connected()) {
-    sendCommand("mqtt server not connected");
+    sendCommand("mqtt not connected");
     return;
   }
   
   int start = 0;
   int lineIdx;
   String sub;
-  bool found = false;
   String newAllSubscriptions = "";
   do {
     lineIdx = mqtt_allSubscriptions.indexOf('\n', start);

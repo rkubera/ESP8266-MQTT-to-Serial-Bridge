@@ -60,6 +60,20 @@ void time_is_set_cb(void) {
 }
 
 void mqtt_cb(char* topic, byte* payload, unsigned int length) {
+  CRC32_reset();
+  for (size_t i = 0; i < strlen(topic); i++) {
+    CRC32_update(topic[i]);
+  }
+  
+  CRC32_update(' ');
+  
+  for (size_t i = 0; i < length; i++) {
+    CRC32_update(payload[i]);
+  }
+  uint32_t checksum = CRC32_finalize();
+  
+  Serial.print(checksum);
+  Serial.print(" ");
   Serial.print(topic);
   Serial.print (" ");
   Serial.write (payload, length);
@@ -98,13 +112,13 @@ bool reconnect() {
     // Attempt to connect
     if (mqtt_user!="") {
       if (client.connect(clientId.c_str(), mqtt_user.c_str(), mqtt_pass.c_str())) {
-        sendCommand("mqtt server connected");
+        sendCommand("mqtt connected");
         return true;
       }
     }
     else {
       if (client.connect(clientId.c_str())) {
-        sendCommand("mqtt server connected");
+        sendCommand("mqtt connected");
         return true;
       }
     }
@@ -116,7 +130,7 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
 
   //Serial
-  Serial.begin(57600);
+  Serial.begin(9600);
   Serial.println();
   sendCommand("ready");
   
