@@ -111,4 +111,4 @@ if ESP8266 not recognised command will return [error] message.
 - Recv: 2549217433 [published]
 - Recv: 1413984600 espMessages/test Hello World!
 - Send: get timestamp
-- Rrcv: 3638178531 [timestamp 1554581454]
+- Recv: 3638178531 [timestamp 1554581454]
