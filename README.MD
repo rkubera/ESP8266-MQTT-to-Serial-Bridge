@@ -17,9 +17,10 @@ Connect do ESP8266 via UART port (9600 baudrate)
 
 ## API
 All responses starts with crc32 checksum, for example:
-1426454121 [connecting to wifi]
+- 1426454121 [connecting to wifi]
+
 In commands description crc32 checksum will be represented as CRC32 for eample:
-CRC32 [connecting to wifi]
+- CRC32 [connecting to wifi]
 
 Commands (must be finished with \n EOL):
 1) <b>connect</b>
