@@ -140,7 +140,7 @@ void mqttUserPassCommand(String payload) {
   if (tmpIdx>-1) {
     //mqtt server and port
     mqtt_user = payload.substring(0, tmpIdx);
-    mqtt_pass = payload.substring(tmpIdx+1).toInt();
+    mqtt_pass = payload.substring(tmpIdx+1);
   }
   else {
     //mqtt only
