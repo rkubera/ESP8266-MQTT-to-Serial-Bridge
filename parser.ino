@@ -22,6 +22,24 @@ bool getSerialBuffer (char* buf, int &idx) {
   return ret;
 }
 
+void parseBuffer() {
+  if (abs(buffmillis-millis())>intervalMillis) {
+    buffmillis = millis();
+    String line;
+    int lineIdx;
+    int start;
+    lineIdx = payloadsBuffer.indexOf('\n');
+    if (lineIdx>0) {
+      start = lineIdx;
+      line = payloadsBuffer.substring(0,start);
+      payloadsBuffer = payloadsBuffer.substring(start+1);
+      //Serial.print("[start]");
+      Serial.println(line);
+      //Serial.println("[stop]");
+    }
+  }
+}
+
 void parseLines(char* buf) {
   static String myBuff = "";
   myBuff = myBuff+ buf;
@@ -77,6 +95,9 @@ void parseLines(char* buf) {
       else if (command=="get") {
         getCommand(payload);
       }
+      else if (command=="crc32") {
+        crc32Command(payload);
+      }
       else {
         sendCommand("error");
       }
@@ -87,5 +108,3 @@ void parseLines(char* buf) {
     myBuff = myBuff.substring(start);
   }
 }
-
-

@@ -10,16 +10,16 @@ by rkubera (Radek Kubera) https://github.com/rkubera
 - Automaticaly reconnect to MQTT Server and resubscribe Topics if disconnected
 - Automaticaly get NTP time
 - Easy API
-- CRC32 control
+- CRC32 checksums
 
 ## Connection
 Connect do ESP8266 via UART port (9600 baudrate)
 
 ## API
-All responses starts with crc32 checksum, for example:
+All responses starts with crc32 checksum (if CRC32 is enabled), for example:
 - 1426454121 [connecting to wifi]
 
-In commands description crc32 checksum will be represented as CRC32 for eample:
+In commands description crc32 checksum will be represented as CRC32 (if CRC32 is enabled) for eample:
 - CRC32 [connecting to wifi]
 
 Commands (must be finished with \n EOL):
@@ -67,7 +67,15 @@ Commands (must be finished with \n EOL):
   - command: unsubscribe mytopic
   - response: CRC32 [subscription removed] or CRC32 [mqtt not connected]
 
-6) <b>get</b>
+6) <b>crc32</b>
+- Enable CRC32 checksum (default)
+  - command: crc32 on
+  - response: CRC32 [crc32 on]
+- Disable CRC32 checksum
+  - command: crc32 off
+  - response: [crc32 off]
+
+7) <b>get</b>
 - Get timestamp from NTP (UTC+0)
   - command: get timestamp
   - response: CRC32 [timestamp 1131334556] or CRC32 [timestamp 0] if not connected to NTP server (yet)
@@ -93,7 +101,7 @@ Commands (must be finished with \n EOL):
   - command: get mqttuser
   - response: CRC32 [mymqttuser]
 
-7) errors
+8) errors
 if ESP8266 not recognised command will return [error] message.
 
 # Quck example:
@@ -107,8 +115,10 @@ if ESP8266 not recognised command will return [error] message.
 - Recv: 4088902839 [mqtt connected]
 - Send: subscribe espMessages/#
 - Recv: 294403144 [subscription added]
+- Send: crc32 off
+- Recv: [crc32 off]
 - Send: publish espMessages/test Hello World!
-- Recv: 2549217433 [published]
-- Recv: 1413984600 espMessages/test Hello World!
+- Recv: [published]
+- Recv: espMessages/test Hello World!
 - Send: get timestamp
-- Recv: 3638178531 [timestamp 1554581454]
+- Recv: [timestamp 1554581454]

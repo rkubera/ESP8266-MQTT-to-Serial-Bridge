@@ -7,16 +7,18 @@
 #include <String.h>
 
 void sendCommand (String myCommand) {
-  CRC32_reset();
-  CRC32_update('[');
-  for (size_t i = 0; i < myCommand.length(); i++) {
-    CRC32_update(myCommand[i]);
+  if (crc32Enabled) {
+    CRC32_reset();
+    CRC32_update('[');
+    for (size_t i = 0; i < myCommand.length(); i++) {
+      CRC32_update(myCommand[i]);
+    }
+    CRC32_update(']');
+    uint32_t checksum = CRC32_finalize();
+    
+    Serial.print(checksum);
+    Serial.print(" ");
   }
-  CRC32_update(']');
-  uint32_t checksum = CRC32_finalize();
-  
-  Serial.print(checksum);
-  Serial.print(" ");
   Serial.print("[");
   Serial.print(myCommand);
   Serial.println("]");
@@ -25,7 +27,8 @@ void sendCommand (String myCommand) {
 void commandLoop() {
   if (getSerialBuffer((char*)myBuffer, bufIdx)) {
     parseLines((char*)myBuffer);
-  }  
+  }
+  parseBuffer();
 }
 
 void getCommand(String payload) {
@@ -68,6 +71,14 @@ void getCommand(String payload) {
     }
     else {
       sendCommand("mqtt not connected");
+    }
+  }
+  else if (payload=="crc32status") {
+    if (crc32Enabled==true) {
+      sendCommand("crc32 on");
+    }
+    else {
+      sendCommand("crc32 off");
     }
   }
   else if (payload=="ssid") {
@@ -134,6 +145,16 @@ void connectCommand(String payload) {
   sendCommand("connecting to wifi");
 }
 
+void crc32Command(String payload) {
+  if (payload=="on" || payload=="ON") {
+    crc32Enabled = true;
+    sendCommand("crc32 on");
+  }
+  else {
+    crc32Enabled = false;
+    sendCommand("crc32 off");
+  }
+}
 void mqttUserPassCommand(String payload) {
   int tmpIdx;
   tmpIdx = payload.indexOf(':');
@@ -234,5 +255,3 @@ void unsubscribeCommand (String subscription) {
   client.unsubscribe(subscription.c_str());
   sendCommand("subscription removed");
 }
-
-

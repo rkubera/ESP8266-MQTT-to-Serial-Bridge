@@ -21,16 +21,19 @@
 timeval cbtime;      // time set in callback
 bool cbtime_set = false;
 
+//CRC32
+bool crc32Enabled = true;
 
 //WIFIsettings
 String ssid;
-String  password;
+String password;
 
 bool wificonnected = false;
 
 //MQTT Client
 WiFiClient espClient;
 PubSubClient client(espClient);
+String payloadsBuffer = "";
 
 String mqtt_server;
 int mqtt_port = 1883;
@@ -42,6 +45,8 @@ String mqtt_allSubscriptions = "";
 #define bufferSize 1024
 uint8_t myBuffer[bufferSize];
 int bufIdx=0;
+unsigned long buffmillis = 0;
+int intervalMillis = 200;
 
 //MQTT payload
 long lastMsg = 0;
@@ -60,24 +65,37 @@ void time_is_set_cb(void) {
 }
 
 void mqtt_cb(char* topic, byte* payload, unsigned int length) {
-  CRC32_reset();
-  for (size_t i = 0; i < strlen(topic); i++) {
-    CRC32_update(topic[i]);
+  if (crc32Enabled) {
+    CRC32_reset();
+    for (size_t i = 0; i < strlen(topic); i++) {
+      CRC32_update(topic[i]);
+    }
+    
+    CRC32_update(' ');
+    
+    for (size_t i = 0; i < length; i++) {
+      CRC32_update(payload[i]);
+    }
+    uint32_t checksum = CRC32_finalize();
+
+    payloadsBuffer+=String(checksum)+" ";
+    
+    //Serial.print(checksum);
+    //Serial.print(" ");
   }
-  
-  CRC32_update(' ');
-  
+  payloadsBuffer+=String(topic)+" ";
   for (size_t i = 0; i < length; i++) {
-    CRC32_update(payload[i]);
+    payloadsBuffer+=(char)payload[i];
   }
-  uint32_t checksum = CRC32_finalize();
+  payloadsBuffer+="\n";
+   
+  //Serial.print(topic);
+  //Serial.print (" ");
+  //Serial.write (payload, length);
+  //Serial.println();
+  //Serial.print(payloadsBuffer);
+  //payloadsBuffer.clear();
   
-  Serial.print(checksum);
-  Serial.print(" ");
-  Serial.print(topic);
-  Serial.print (" ");
-  Serial.write (payload, length);
-  Serial.println();
   if ((char)payload[0] == '1') {
     digitalWrite(LED_BUILTIN, LOW);   // Turn the LED on (Note that LOW is the voltage level
   } else {
@@ -180,4 +198,3 @@ void loop() {
   commandLoop();
   yield();
 }
-
