@@ -3,9 +3,10 @@ by rkubera (Radek Kubera) https://github.com/rkubera
 - License: MIT
 
 ## Features
+- WEB GUI Configuration Interface
 - Connect to MQTT Server via WIFI
-- Publish Topics to MQTT Server via Serial
-- Subscribe/Unsubscribe Topics from MQTT Server via Serial
+- Publish Topics to MQTT Server via UART (Serial port)
+- Subscribe/Unsubscribe Topics from MQTT Server via UART
 - Automaticaly reconnect to Wifi if signal lost
 - Automaticaly reconnect to MQTT Server and resubscribe Topics if disconnected
 - Automaticaly get NTP time
@@ -14,6 +15,13 @@ by rkubera (Radek Kubera) https://github.com/rkubera
 
 ## Connection
 Connect do ESP8266 via UART port (9600 baudrate)
+
+##GUI
+You can configure ssid, password and mqtt parameters via web GUI.
+If ESP8266 cannot connects to WIFI Acces Point, creates own WIFI Acces Point named mqtt-clnt-XXXXXXXX (where XXXXXXX is Chip SN)
+You can connect to AP and open Web Browser with address: http://192.168.4.1
+Now you can set all parameters and save configuration.
+If ESP8266 connects successfully to WIFI Acces Point, Web Server will stopped. You can alsow modify all settings via API inerface (using UART port).
 
 ## API
 All responses starts with crc32 checksum (if CRC32 is enabled), for example:
@@ -100,7 +108,13 @@ Commands (must be finished with \n EOL):
 - Get mqtt user
   - command: get mqttuser
   - response: CRC32 [mymqttuser]
-
+- Get mqtt hostname
+  - command: get mqtthostname
+  - response: CRC32 [mymqtthostname]
+-Get CRC32 checksum status
+  - command: get crc32status
+  - response: crc32 on/crc32 off
+  
 8) errors
 if ESP8266 not recognised command will return [error] message.
 

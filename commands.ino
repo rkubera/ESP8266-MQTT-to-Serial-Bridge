@@ -6,6 +6,16 @@
  
 #include <String.h>
 
+void commandLoop() {
+ if (!client.connected() && mqtt_server!="") {
+    reconnect();
+  }
+  if (getSerialBuffer((char*)myBuffer, bufIdx)) {
+    parseLines((char*)myBuffer);
+  }
+  parseBuffer();
+}
+
 void sendCommand (String myCommand) {
   if (crc32Enabled) {
     CRC32_reset();
@@ -22,13 +32,6 @@ void sendCommand (String myCommand) {
   Serial.print("[");
   Serial.print(myCommand);
   Serial.println("]");
-}
-
-void commandLoop() {
-  if (getSerialBuffer((char*)myBuffer, bufIdx)) {
-    parseLines((char*)myBuffer);
-  }
-  parseBuffer();
 }
 
 void getCommand(String payload) {
@@ -58,11 +61,13 @@ void getCommand(String payload) {
     sendCommand(command);
   }
   else if (payload=="wifistatus") {
-    if (wificonnected==true) {
+    if (WiFi.status() == WL_CONNECTED) {
       sendCommand("wifi connected");
+      wificonnected = true;
     }
     else {
       sendCommand("wifi not connected");
+      wificonnected = false;
     }
   }
   else if (payload=="mqttstatus") {
@@ -92,6 +97,9 @@ void getCommand(String payload) {
   }
   else if (payload=="mqttuser") {
     sendCommand(mqtt_user);
+  }
+  else if (payload=="mqtthostname") {
+    sendCommand(mqtt_hostname);
   }
   else sendCommand("error");
 }
@@ -127,23 +135,6 @@ void publishretainedCommand (String payload) {
     sendCommand("wrong publish command");
   }
 }
-void connectCommand(String payload) {
-  int tmpIdx;
-  tmpIdx = payload.indexOf(':');
-  if (tmpIdx>-1) {
-    //AP ssid and password
-    ssid = payload.substring(0, tmpIdx);
-    password = payload.substring(tmpIdx+1);
-  }
-  else {
-    //open AP, only ssid
-    ssid = payload;
-  }
-  client.disconnect();
-  WiFi.disconnect();
-  wificonnected= false;
-  sendCommand("connecting to wifi");
-}
 
 void crc32Command(String payload) {
   if (payload=="on" || payload=="ON") {
@@ -155,44 +146,123 @@ void crc32Command(String payload) {
     sendCommand("crc32 off");
   }
 }
+
+void connectCommand(String payload) {
+  int tmpIdx;
+  tmpIdx = payload.indexOf(':');
+
+  String new_ssid;
+  String new_password;
+  if (tmpIdx>-1) {
+    //AP ssid and password
+    new_ssid = payload.substring(0, tmpIdx);
+    new_password = payload.substring(tmpIdx+1);
+  }
+  else {
+    //open AP, only ssid
+    ssid = payload;
+  }
+  //int res =  wifiManager.connectWifi(ssid, password);
+  wifiManager.setConfigPortalTimeout(1);
+
+  struct station_config station_cfg;
+  
+  if (new_ssid  == ssid && new_password == password) {
+    WiFi.persistent(false);
+  }
+  else {
+    WiFi.persistent(true);
+  }
+  int res = WiFi.begin(new_ssid.c_str(), new_password.c_str(),0,NULL,true);
+  WiFi.persistent(false);
+  sendCommand("connecting to wifi");
+}
+
 void mqttUserPassCommand(String payload) {
   int tmpIdx;
   tmpIdx = payload.indexOf(':');
+  bool changed = false;
   if (tmpIdx>-1) {
     //mqtt server and port
-    mqtt_user = payload.substring(0, tmpIdx);
-    mqtt_pass = payload.substring(tmpIdx+1);
+    //mqtt_user = payload.substring(0, tmpIdx).c_str();
+    //mqtt_pass = payload.substring(tmpIdx+1).c_str();
+    String new_mqtt_user = payload.substring(0, tmpIdx);
+    String new_mqtt_pass = payload.substring(tmpIdx+1);
+
+    if (strcmp(new_mqtt_user.c_str(),mqtt_user)) {
+      strcpy(mqtt_user, new_mqtt_user.c_str());
+      saveToEeprom (mqtt_userAddress, mqtt_user, 33);
+      custom_mqtt_user.setValue(mqtt_user,32);
+      changed = true;
+    }
+
+    if (strcmp(new_mqtt_pass.c_str(),mqtt_pass)) {
+      strcpy(mqtt_pass, new_mqtt_pass.c_str());
+      saveToEeprom (mqtt_passAddress, mqtt_pass, 33);
+      custom_mqtt_pass.setValue(mqtt_pass,32);
+      changed = true;
+    }
+    
   }
   else {
-    //mqtt only
-    mqtt_user = payload;
+    //user only
+    if (strcmp(payload.c_str(),mqtt_user)) {
+      strcpy(mqtt_user, payload.c_str());
+      strcpy(mqtt_pass, "");
+      saveToEeprom (mqtt_userAddress, mqtt_user, 33);
+      saveToEeprom (mqtt_passAddress, mqtt_pass, 33);
+      custom_mqtt_user.setValue(mqtt_user,32);
+      custom_mqtt_pass.setValue(mqtt_pass,32);
+      changed = true;
+    }
+    //mqtt_user = payload.c_str();
   }
-  client.disconnect();
+
+  if (changed==true) {
+    mqtt_allSubscriptions = "";
+    client.disconnect();
+  }
   sendCommand("mqtt user and pass set");
 }
 
 void mqttServerCommand(String payload) {
   int tmpIdx;
   tmpIdx = payload.indexOf(':');
+  String new_mqtt_server;
+  String new_mqtt_port;
   if (tmpIdx>-1) {
-    //mqtt server and port
-    mqtt_server = payload.substring(0, tmpIdx);
-    mqtt_port = payload.substring(tmpIdx+1).toInt();
+    new_mqtt_server = payload.substring(0, tmpIdx);
+    new_mqtt_port = payload.substring(tmpIdx+1);
   }
   else {
-    //mqtt only
-    mqtt_server = payload;
+    new_mqtt_server = payload;
+    new_mqtt_port = "1883";
   }
-  client.disconnect();
-  client.setServer(mqtt_server.c_str(), mqtt_port);
+
+  bool changed = false;
+  if (strcmp(new_mqtt_server.c_str(),mqtt_server)) {
+    strcpy(mqtt_server, new_mqtt_server.c_str());
+    saveToEeprom (mqtt_serverAddress, mqtt_server, 41);
+    custom_mqtt_server.setValue(mqtt_server,40);
+    changed = true;
+  }
+
+  if (strcmp(new_mqtt_port.c_str(),mqtt_port)) {
+    strcpy(mqtt_port, new_mqtt_port.c_str());
+    saveToEeprom (mqtt_portAddress, mqtt_port, 7);
+    custom_mqtt_port.setValue(mqtt_port,6);
+    changed = true;
+  }
+
+  if (changed==true) {
+    client.disconnect();
+    mqtt_allSubscriptions = "";
+    mqtt_was_connected=false;
+  }
   sendCommand("connecting to mqtt server");
 }
 
 void subscribeCommand (String subscription) {
-  if (!client.connected()) {
-    sendCommand("mqtt not connected");
-    return;
-  }
   int start = 0;
   int lineIdx;
   String sub;
@@ -229,7 +299,6 @@ void unsubscribeCommand (String subscription) {
     sendCommand("mqtt not connected");
     return;
   }
-  
   int start = 0;
   int lineIdx;
   String sub;

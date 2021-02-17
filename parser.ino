@@ -45,21 +45,29 @@ void parseLines(char* buf) {
   myBuff = myBuff+ buf;
   int start = 0;
   String line;
-  String command;
-  String payload;
   int lineIdx;
-  int tmpIdx;
   do {
     lineIdx = myBuff.indexOf('\n', start);
     if (lineIdx>-1) {
       line = myBuff.substring(start, lineIdx);
       start = lineIdx+1;
       line.trim();
+      parseCommand (line);
     }
     else {
       line = "";
     }
-    
+  }
+  while (lineIdx>-1);
+  if (start>0) {
+    myBuff = myBuff.substring(start);
+  }
+}
+
+void parseCommand(String line) {
+    int tmpIdx;
+    String command;
+    String payload;
     if (line.length()>0) {
       tmpIdx = line.indexOf(' ');
       if (tmpIdx>-1) {
@@ -102,9 +110,4 @@ void parseLines(char* buf) {
         sendCommand("error");
       }
     }
-  }
-  while (lineIdx>-1);
-  if (start>0) {
-    myBuff = myBuff.substring(start);
-  }
 }
