@@ -16,7 +16,7 @@ by rkubera (Radek Kubera) https://github.com/rkubera
 ## Connection
 Connect do ESP8266 via UART port (9600 baudrate)
 
-##GUI
+## GUI
 You can configure ssid, password and mqtt parameters via web GUI.
 If ESP8266 cannot connects to WIFI Acces Point, creates own WIFI Acces Point named mqtt-clnt-XXXXXXXX (where XXXXXXX is Chip SN)
 You can connect to AP and open Web Browser with address: http://192.168.4.1
@@ -111,7 +111,7 @@ Commands (must be finished with \n EOL):
 - Get mqtt hostname
   - command: get mqtthostname
   - response: CRC32 [mymqtthostname]
--Get CRC32 checksum status
+- Get CRC32 checksum status
   - command: get crc32status
   - response: crc32 on/crc32 off
   
