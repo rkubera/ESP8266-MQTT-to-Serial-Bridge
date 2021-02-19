@@ -24,7 +24,7 @@ char mqtt_server[41] = "";
 char mqtt_port[7] = "1883";
 char mqtt_user[33] = "";
 char mqtt_pass[33] = "";
-char mqtt_hostname[33] = "mqtt-client";
+char wifi_hostname[33] = "mqtt-client";
 
 String payloadsBuffer = "";
 String mqtt_allSubscriptions = "";
@@ -38,7 +38,7 @@ char mqtt_serverAddress = tempSelectorAddress+1;
 char mqtt_portAddress = mqtt_serverAddress+41;
 char mqtt_userAddress = mqtt_portAddress+7;
 char mqtt_passAddress = mqtt_userAddress+33;
-char mqtt_hostnameAddress = mqtt_passAddress+33;
+char wifi_hostnameAddress = mqtt_passAddress+33;
 
 //Wifi
 #include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
@@ -50,7 +50,7 @@ WiFiManagerParameter custom_mqtt_server("server", "mqtt server", mqtt_server, 40
 WiFiManagerParameter custom_mqtt_port("port", "mqtt port", mqtt_port, 6);
 WiFiManagerParameter custom_mqtt_user("user", "mqtt user", mqtt_user, 32);
 WiFiManagerParameter custom_mqtt_pass("pass", "mqtt password", mqtt_pass, 32);
-WiFiManagerParameter custom_mqtt_hostname("hostname", "hostname", mqtt_hostname, 32);
+WiFiManagerParameter custom_wifi_hostname("hostname", "hostname", wifi_hostname, 32);
   
 WiFiManager wifiManager;
 String ssid = "mqtt-clnt-"+String(ESP.getChipId());
@@ -65,13 +65,13 @@ void saveConfigCallback () {
   strcpy(mqtt_port, custom_mqtt_port.getValue());
   strcpy(mqtt_user, custom_mqtt_user.getValue());
   strcpy(mqtt_pass, custom_mqtt_pass.getValue());
-  strcpy(mqtt_hostname, custom_mqtt_hostname.getValue());
+  strcpy(wifi_hostname, custom_wifi_hostname.getValue());
 
   saveToEeprom (mqtt_serverAddress, mqtt_server, 41);
   saveToEeprom (mqtt_portAddress, mqtt_port, 7);
   saveToEeprom (mqtt_userAddress, mqtt_user, 33);
   saveToEeprom (mqtt_passAddress, mqtt_pass, 33);
-  saveToEeprom (mqtt_hostnameAddress, mqtt_hostname, 33);
+  saveToEeprom (wifi_hostnameAddress, wifi_hostname, 33);
 }
 
 //NTP
@@ -192,7 +192,7 @@ bool reconnect() {
       sscanf(mqtt_port, "%d", &i_mqtt_port);
       client.setServer(mqtt_server, i_mqtt_port);
       delay(300);
-      if (client.connect(mqtt_hostname, mqtt_user, mqtt_pass)) {
+      if (client.connect(wifi_hostname, mqtt_user, mqtt_pass)) {
         sendCommand("mqtt connected");
         resubcribe();
         mqtt_was_connected = true;
@@ -200,7 +200,7 @@ bool reconnect() {
       }
     }
     else {
-      if (client.connect(mqtt_hostname)) {
+      if (client.connect(wifi_hostname)) {
         sendCommand("mqtt connected");
         resubcribe();
         mqtt_was_connected = true;
@@ -240,7 +240,7 @@ void mydelay(int millisDelay) {
 
 void setup() {
 
-  strcpy(mqtt_hostname,ssid.c_str());
+  strcpy(wifi_hostname,ssid.c_str());
   //ESP.eraseConfig();
   pinMode(LED_BUILTIN, OUTPUT);     // Initialize the BUILTIN_LED pin as an output
 
@@ -257,7 +257,7 @@ void setup() {
     loadFromEeprom (mqtt_portAddress, mqtt_port, 7);
     loadFromEeprom (mqtt_userAddress, mqtt_user, 33);
     loadFromEeprom (mqtt_passAddress, mqtt_pass, 33);
-    loadFromEeprom (mqtt_hostnameAddress, mqtt_hostname, 33);
+    loadFromEeprom (wifi_hostnameAddress, wifi_hostname, 33);
    }
    else {
     saveConfigCallback ();
@@ -268,9 +268,9 @@ void setup() {
   custom_mqtt_port.setValue(mqtt_port,6);
   custom_mqtt_user.setValue(mqtt_user,32);
   custom_mqtt_pass.setValue(mqtt_pass,32);
-  custom_mqtt_hostname.setValue(mqtt_hostname,32);
+  custom_wifi_hostname.setValue(wifi_hostname,32);
   
-  WiFi.hostname(mqtt_hostname);
+  WiFi.hostname(wifi_hostname);
   client.setCallback(mqtt_cb);
 
   //NTP
@@ -287,7 +287,7 @@ void setup() {
   wifiManager.addParameter(&custom_mqtt_port);
   wifiManager.addParameter(&custom_mqtt_user);
   wifiManager.addParameter(&custom_mqtt_pass);
-  wifiManager.addParameter(&custom_mqtt_hostname);
+  wifiManager.addParameter(&custom_wifi_hostname);
 }
 
 void loop() {
@@ -302,6 +302,7 @@ void loop() {
       }
     }
     if (WiFi.status() == WL_CONNECTED) {
+      ssid = wifiManager.getWiFiSSID(false);
       sendCommand("wifi connected");
     }
   }

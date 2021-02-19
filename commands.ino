@@ -87,19 +87,19 @@ void getCommand(String payload) {
     }
   }
   else if (payload=="ssid") {
-    sendCommand(ssid);
+    sendCommand("ssid "+ssid);
   } 
   else if (payload=="mqttserver") {
-    sendCommand(mqtt_server);
+    sendCommand("mqttserver "+String(mqtt_server));
   }
   else if (payload=="mqttport") {
-    sendCommand((String)mqtt_port);
+    sendCommand("mqttport "+(String)mqtt_port);
   }
   else if (payload=="mqttuser") {
-    sendCommand(mqtt_user);
+    sendCommand("mqttuser "+String(mqtt_user));
   }
-  else if (payload=="mqtthostname") {
-    sendCommand(mqtt_hostname);
+  else if (payload=="hostname") {
+    sendCommand("hostname "+String(wifi_hostname));
   }
   else sendCommand("error");
 }
@@ -160,7 +160,7 @@ void connectCommand(String payload) {
   }
   else {
     //open AP, only ssid
-    ssid = payload;
+    new_ssid = payload;
   }
   //int res =  wifiManager.connectWifi(ssid, password);
   wifiManager.setConfigPortalTimeout(1);
@@ -174,18 +174,28 @@ void connectCommand(String payload) {
     WiFi.persistent(true);
   }
   int res = WiFi.begin(new_ssid.c_str(), new_password.c_str(),0,NULL,true);
+  ssid = new_ssid;
   WiFi.persistent(false);
   sendCommand("connecting to wifi");
 }
+
+void wifiHostnameCommand(String payload) {
+  if (strcmp(payload.c_str(),wifi_hostname)) {
+      strcpy(wifi_hostname, payload.c_str());
+      saveToEeprom (wifi_hostnameAddress, wifi_hostname, 33);
+      custom_wifi_hostname.setValue(wifi_hostname,32);
+    }
+    wifi_station_set_hostname(wifi_hostname);
+    WiFi.hostname(wifi_hostname);
+    sendCommand("hostname changed");
+}
+
 
 void mqttUserPassCommand(String payload) {
   int tmpIdx;
   tmpIdx = payload.indexOf(':');
   bool changed = false;
   if (tmpIdx>-1) {
-    //mqtt server and port
-    //mqtt_user = payload.substring(0, tmpIdx).c_str();
-    //mqtt_pass = payload.substring(tmpIdx+1).c_str();
     String new_mqtt_user = payload.substring(0, tmpIdx);
     String new_mqtt_pass = payload.substring(tmpIdx+1);
 

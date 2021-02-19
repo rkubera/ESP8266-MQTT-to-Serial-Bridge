@@ -83,7 +83,12 @@ Commands (must be finished with \n EOL):
   - command: crc32 off
   - response: [crc32 off]
 
-7) <b>get</b>
+7) <b>hostname</b>
+- Change hostname
+  - command: hostname myhostname
+  - response: CRC32 [hostname myhostname]
+  
+8) <b>get</b>
 - Get timestamp from NTP (UTC+0)
   - command: get timestamp
   - response: CRC32 [timestamp 1131334556] or CRC32 [timestamp 0] if not connected to NTP server (yet)
@@ -98,24 +103,24 @@ Commands (must be finished with \n EOL):
   - response: CRC32 [wifi connected] or [wifi not connected]
 - Get ssid
   - command: get ssid
-  - resonse: CRC32 [myssid]
+  - resonse: CRC32 [ssid myssid]
 - Get MQTT Server status
   - command: get mqttstatus
   - response: CRC32 [mqtt connected] or CRC32 [mqtt not connected]
 - Get mqtt Server
   - comand: get mqttserver
-  - response: CRC32 [mymqttserver]
+  - response: CRC32 [mqttserver mymqttserver]
 - Get mqtt user
   - command: get mqttuser
-  - response: CRC32 [mymqttuser]
+  - response: CRC32 [mqttuser mymqttuser]
 - Get mqtt hostname
-  - command: get mqtthostname
-  - response: CRC32 [mymqtthostname]
+  - command: get hostname
+  - response: CRC32 [hostname mymqtthostname]
 - Get CRC32 checksum status
   - command: get crc32status
   - response: crc32 on/crc32 off
   
-8) errors
+9) errors
 if ESP8266 not recognised command will return [error] message.
 
 # Quck example:

@@ -100,6 +100,9 @@ void parseCommand(String line) {
       else if (command=="publishretained") {
         publishretainedCommand(payload);
       }
+      else if (command=="hostname") {
+        wifiHostnameCommand(payload);
+      }
       else if (command=="get") {
         getCommand(payload);
       }
