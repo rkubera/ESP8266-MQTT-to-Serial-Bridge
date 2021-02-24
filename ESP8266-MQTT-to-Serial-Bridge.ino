@@ -302,11 +302,11 @@ void loop() {
       }
     }
     if (WiFi.status() == WL_CONNECTED) {
-      ssid = wifiManager.getWiFiSSID(false);
       sendCommand("wifi connected");
     }
   }
   else {
+    ssid = wifiManager.getWiFiSSID(false);
     wificonnected = true;
     mqttloop();
   }
